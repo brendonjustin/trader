@@ -1,0 +1,32 @@
+You should only need to modify my_bot.py. A rather silly example bot
+is provided.
+
+To run the simulation:
+  python my_bot.py
+
+You can choose between plotting a single simulation and printing
+aggregate statistics for multiple simulations by
+commenting/uncommenting the appropriate lines in main().
+
+But first, you need Python installed.
+
+On Ubuntu:
+  sudo apt-get install python
+
+Or download it directly:
+  http://www.python.org/download/releases/2.7.2/
+
+Required Python packages:
+  numpy
+  matplotlib
+
+On Ubuntu, you can install these with:
+  sudo apt-get install python-numpy python-matplotlib
+
+Or download them directly (these are the versions I'm using):
+  http://sourceforge.net/projects/numpy/files/NumPy/1.5.1/
+  http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.0.1/
+
+Need to learn Python?
+  http://wiki.python.org/moin/BeginnersGuide
+  http://www.diveintopython.net/
