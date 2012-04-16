@@ -4,8 +4,11 @@ import traders
 import run_experiments
 import plot_simulation
 
+import numpy
+
 class MyBot(traders.Trader):
     name = 'my_bot'
+    movingAvg = -1
 
     def simulation_params(self, timesteps,
                           possible_jump_locations,
@@ -57,12 +60,19 @@ class MyBot(traders.Trader):
         """
         # Place a randomly sized trade in the direction of
         # our last information. What could possibly go wrong?
+
+        print 'belief: %(belief)f, price: %(price)f, oprice: %(oprice)f' \
+        % {"belief": market_belief, "price": check_callback('buy', 10), "oprice": check_callback('buy', 100)}
+
+        avg = numpy.average(self.information)
         quantity = random.choice(xrange(1, 100))
-        if (self.information[-1] == 1
-            and check_callback('buy', quantity) < 99.0):
+        if (check_callback('buy', quantity) < 100*avg):
             execute_callback('buy', quantity)
-        elif check_callback('sell', quantity) > 1.0:
+        elif check_callback('sell', quantity) > 100*avg:
             execute_callback('sell', quantity)
+
+        if len(self.information) > 10:
+            self.movingAvg = numpy.average(self.information[-10:])
 
 def main():
     bots = [MyBot()]
@@ -74,7 +84,7 @@ def main():
     
     # Calculate statistics over many runs. Provides the mean and
     # standard deviation of your bot's profit.
-    #run_experiments.run(bots, simulations=2000)
+    run_experiments.run(bots, num_processes=3, simulations=2000)
 
 # Extra parameters to plot_simulation.run:
 #   timesteps=100, lmsr_b=150
