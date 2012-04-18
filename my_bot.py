@@ -100,7 +100,7 @@ class MyBot(traders.Trader):
 
         # Trade in the best way, if a beneficial trade was found
         if bestQuantity > 0:
-            print "Buying or selling? " + bestAction
+            # print "Buying or selling? " + bestAction
             execute_callback(bestAction, bestQuantity)
 
         # Place a randomly sized trade in the direction of
