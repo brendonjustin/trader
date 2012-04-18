@@ -58,21 +58,58 @@ class MyBot(traders.Trader):
         Note that a bot can always buy and sell: the bot will borrow
         shares or cash automatically.
         """
-        # Place a randomly sized trade in the direction of
-        # our last information. What could possibly go wrong?
-
-        print 'belief: %(belief)f, price: %(price)f, oprice: %(oprice)f' \
-        % {"belief": market_belief, "price": check_callback('buy', 10), "oprice": check_callback('buy', 100)}
-
+        #   Don't trade on very limited information
+        if len(self.information) < 10:
+            return
+ 
         avg = numpy.average(self.information)
-        quantity = random.choice(xrange(1, 100))
-        if (check_callback('buy', quantity) < 100*avg):
-            execute_callback('buy', quantity)
-        elif check_callback('sell', quantity) > 100*avg:
-            execute_callback('sell', quantity)
+        useAvg = avg
+        if len(self.information) > 20:
+            movingAvg = numpy.average(self.information[-20:])
+            if abs(avg-movingAvg) > 0.2:
+                useAvg = movingAvg
 
-        if len(self.information) > 10:
-            self.movingAvg = numpy.average(self.information[-10:])
+        useAvg = useAvg*100
+
+        buyDiff = 0
+        sellDiff = 0
+        bestBuyQuantity = 0
+        bestSellQuantity = 0
+        bestQuantity = 0
+        bestAction = 'buy'
+        maxUncertainQuantity = 20
+        for quantity in range(1, max(len(self.information), maxUncertainQuantity
+            )):
+            cost = quantity*check_callback('buy', quantity)
+            if useAvg*quantity - cost > buyDiff:
+                buyDiff = useAvg*quantity - cost
+                bestBuyQuantity = quantity
+
+            gains = quantity*check_callback('sell', quantity)
+            if gains - useAvg*quantity > sellDiff:
+                sellDiff = gains - useAvg*quantity
+                bestSellQuantity = quantity
+
+
+            if sellDiff > buyDiff:
+                bestQuantity = bestSellQuantity
+                bestAction = 'sell'
+            else:
+                bestQuantity = bestBuyQuantity
+                bestAction = 'buy'
+
+        # Trade in the best way, if a beneficial trade was found
+        if bestQuantity > 0:
+            print "Buying or selling? " + bestAction
+            execute_callback(bestAction, bestQuantity)
+
+        # Place a randomly sized trade in the direction of
+        # our cumulative information.
+        # quantity = random.choice(xrange(1, 100))
+        # if (check_callback('buy', quantity) < 100*avg):
+        #     execute_callback('buy', quantity)
+        # elif check_callback('sell', quantity) > 100*avg:
+        #     execute_callback('sell', quantity)
 
 def main():
     bots = [MyBot()]
