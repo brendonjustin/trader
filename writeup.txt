@@ -1,0 +1,21 @@
+Brendon Justin
+Maynard Price
+
+1. How does your trader estimate pi at time i? What algorithm do you use to try and account for the probability of jumps?
+
+The trader estimates the current price by averaging the signals that it receives, e.g. if it receives signals in a sequence (1,1,0,0,0,0,0,0,0,0), then it will estimate the current price as 100*2/10 = 20.  In order to detect jumps, the bot checks the moving average of the last 'n' signals it has received, compared to the average of all of the signals it has received so far.  The number 'n' of signals checked in the moving average is adjustable, and currently set to 20.  A lower 'n' value will detect jumps sooner, but also suffer from more false positives due to higher variation for small numbers of samples of a probability distribution.  A larger 'n' value will take longer to detect jumps, but show fewer false positives.  Currently the difference between the moving average and the cumulative average must be greater than 20 to trigger the jump handling code.  The approach is most effective for large jumps near the end of a simulation period.  If a jump occurs a long time before the end, then the code will 'forget' that there was a jump and return to using the average of all signals received.
+
+2. At which periods does your trader choose to trade? How did you decide this? 
+The trader will always trade if it thinks that, given the current estimated price, it can buy for less than the price or sell for more than the price.
+
+3. How does your trader decide what quantities to trade?
+The bot decides on quantities such that, if buying, the trade results in the greatest difference between the (estimated) value of that quantity and the price paid for said quantity.  The bot will only buy at prices less than the current value of stock, so it maximizes gains.  If selling, the bot finds the optimal quantity to sell such that it will receive the biggest difference between the money gained by selling and the value of the quantity sold.  The strategy is similar to a greedy algorithm in that it always seeks the best trade for the current tick, disregarding past and future trades.. 
+
+4. Report the mean profit and standard deviation of profits your trader achieves over at least 1000 simulation runs.
+Over 2000 runs:
+Mean profit: 2668.80
+Standard deviation: 3273.71
+
+
+5. Graphically depict the evolution of prices in one simulation run which you consider typical for your trader.
+(sample_run.png)

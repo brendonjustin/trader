@@ -78,8 +78,7 @@ class MyBot(traders.Trader):
         bestQuantity = 0
         bestAction = 'buy'
         maxUncertainQuantity = 20
-        for quantity in range(1, max(len(self.information), maxUncertainQuantity
-            )):
+        for quantity in range(1, max(len(self.information), maxUncertainQuantity)):
             cost = quantity*check_callback('buy', quantity)
             if useAvg*quantity - cost > buyDiff:
                 buyDiff = useAvg*quantity - cost
@@ -121,7 +120,7 @@ def main():
     
     # Calculate statistics over many runs. Provides the mean and
     # standard deviation of your bot's profit.
-    run_experiments.run(bots, num_processes=3, simulations=2000)
+    # run_experiments.run(bots, num_processes=3, simulations=2000)
 
 # Extra parameters to plot_simulation.run:
 #   timesteps=100, lmsr_b=150
