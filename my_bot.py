@@ -8,7 +8,6 @@ import numpy
 
 class MyBot(traders.Trader):
     name = 'my_bot'
-    movingAvg = -1
 
     def simulation_params(self, timesteps,
                           possible_jump_locations,
@@ -24,6 +23,9 @@ class MyBot(traders.Trader):
         self.single_jump_probability = single_jump_probability
         # A place to store the information we get
         self.information = []
+
+        self.lastJumpIndex = 0
+        self.diffMovingAvg = []
     
     def new_information(self, info, time):
         """Get information about the underlying market value.
@@ -58,27 +60,43 @@ class MyBot(traders.Trader):
         Note that a bot can always buy and sell: the bot will borrow
         shares or cash automatically.
         """
+        #   Some default values
+        bestAction = 'buy'
+        maxUncertainQuantity = 20
+        windowSize = 20
+
         #   Don't trade on very limited information
         if len(self.information) < 10:
             return
- 
-        avg = numpy.average(self.information)
-        useAvg = avg
-        if len(self.information) > 20:
-            movingAvg = numpy.average(self.information[-20:])
-            if abs(avg-movingAvg) > 0.2:
-                useAvg = movingAvg
 
-        useAvg = useAvg*100
+        # print "zero"
+        # Consider the largest difference between two moving averages
+        # to be a jump point if said difference is greater than some theshold
+        if len(self.information) > 2*windowSize:
+            # print "a"
+            movingAvg = numpy.average(self.information[-windowSize:])
+            # print "b"
+            preMovingAvg = numpy.average(self.information[-2*windowSize:-windowSize])
+            # print "c"
+            self.diffMovingAvg.append(movingAvg-preMovingAvg)
+
+            if self.diffMovingAvg[-1] == max(self.diffMovingAvg) and abs(self.diffMovingAvg[-1]) > 0.3:
+                self.lastJumpIndex = len(self.diffMovingAvg) + windowSize
+                # print "Jumping at:", self.lastJumpIndex
+            # print "e"
+
+        # print "last jump index:", self.lastJumpIndex
+        avg = numpy.average(self.information[self.lastJumpIndex:])
+        # print "one"
+
+        useAvg = avg*100
 
         buyDiff = 0
         sellDiff = 0
         bestBuyQuantity = 0
         bestSellQuantity = 0
         bestQuantity = 0
-        bestAction = 'buy'
-        maxUncertainQuantity = 20
-        for quantity in range(1, max(len(self.information), maxUncertainQuantity)):
+        for quantity in range(1, max(2*len(self.information[self.lastJumpIndex:]), maxUncertainQuantity)):
             cost = quantity*check_callback('buy', quantity)
             if useAvg*quantity - cost > buyDiff:
                 buyDiff = useAvg*quantity - cost
@@ -120,7 +138,7 @@ def main():
     
     # Calculate statistics over many runs. Provides the mean and
     # standard deviation of your bot's profit.
-    # run_experiments.run(bots, num_processes=3, simulations=2000)
+    # run_experiments.run(bots, num_processes=3, simulations=13)
 
 # Extra parameters to plot_simulation.run:
 #   timesteps=100, lmsr_b=150
