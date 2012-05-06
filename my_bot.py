@@ -27,6 +27,7 @@ class MyBot(traders.Trader):
 
         self.lastJumpIndex = 0
         self.diffMovingAvg = []
+        self.useAvg = 0
     
     def new_information(self, info, time):
         """Get information about the underlying market value.
@@ -44,6 +45,31 @@ class MyBot(traders.Trader):
           previous_market_belief), ...]
         Note that this isn't just new trades; it's all of them."""
         self.trades = trades
+
+    def find_best_quantity(self, quantity, stride, tradeString, check_callback):
+        if quantity == 0:
+            return 0, 0
+
+        if stride > 0:
+            qtyL = quantity-stride
+            qtyR = quantity+stride
+            profitL = 0
+            profitR = 0
+
+            if qtyL > 0:
+                qtyL, profitL = self.find_best_quantity(quantity-stride, stride / 2, tradeString, check_callback)
+            if qtyR > 0:
+                qtyR, profitR = self.find_best_quantity(quantity+stride, stride / 2, tradeString, check_callback)
+
+            if profitL > profitR:
+                return qtyL, profitL
+            else:
+                return qtyR, profitR
+        else:
+            if tradeString == 'buy':
+                return quantity, quantity*(self.useAvg - check_callback(tradeString, quantity))
+            else:
+                return quantity, quantity*(check_callback(tradeString, quantity) - self.useAvg)
 
     def trading_opportunity(self, cash_callback, shares_callback,
                             check_callback, execute_callback,
@@ -65,6 +91,7 @@ class MyBot(traders.Trader):
         bestAction = 'buy'
         maxUncertainQuantity = 20
         windowSize = 20
+        jumpThreshold = 0.3
 
         #   Don't trade on very limited information
         if len(self.information) < 10:
@@ -81,7 +108,7 @@ class MyBot(traders.Trader):
             # print "c"
             self.diffMovingAvg.append(movingAvg-preMovingAvg)
 
-            if self.diffMovingAvg[-1] == max(self.diffMovingAvg) and abs(self.diffMovingAvg[-1]) > 0.3:
+            if self.diffMovingAvg[-1] == max(self.diffMovingAvg) and abs(self.diffMovingAvg[-1]) > jumpThreshold:
                 self.lastJumpIndex = len(self.diffMovingAvg) + windowSize
                 # print "Jumping at:", self.lastJumpIndex
             # print "e"
@@ -90,23 +117,24 @@ class MyBot(traders.Trader):
         avg = numpy.average(self.information[self.lastJumpIndex:])
         # print "one"
 
-        useAvg = avg*100
+        self.useAvg = avg*100
 
         buyDiff = 0
         sellDiff = 0
         bestBuyQuantity = 0
         bestSellQuantity = 0
         bestQuantity = 0
-        for quantity in range(1, max(2*len(self.information[self.lastJumpIndex:]), maxUncertainQuantity)):
-            cost = quantity*check_callback('buy', quantity)
-            if useAvg*quantity - cost > buyDiff:
-                buyDiff = useAvg*quantity - cost
-                bestBuyQuantity = quantity
+        rangeStride = max(2*len(self.information[self.lastJumpIndex:]), maxUncertainQuantity) / 2
+        quantity = rangeStride
+        bestBuyQuantity, buyDiff = self.find_best_quantity(quantity, rangeStride, 'buy', check_callback)
+        bestSellQuantity, sellDiff = self.find_best_quantity(quantity, rangeStride, 'sell', check_callback)
 
-            gains = quantity*check_callback('sell', quantity)
-            if gains - useAvg*quantity > sellDiff:
-                sellDiff = gains - useAvg*quantity
-                bestSellQuantity = quantity
+        if sellDiff > buyDiff:
+            bestQuantity = bestSellQuantity
+            bestAction = 'sell'
+        else:
+            bestQuantity = bestBuyQuantity
+            bestAction = 'buy'
 
         # Trade in the best way, if a beneficial trade was found
         if bestQuantity > 0:
