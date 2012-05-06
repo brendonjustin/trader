@@ -50,26 +50,28 @@ class MyBot(traders.Trader):
         if quantity == 0:
             return 0, 0
 
-        if stride > 0:
-            qtyL = quantity-stride
-            qtyR = quantity+stride
-            profitL = 0
-            profitR = 0
+        stride = stride / 2
 
-            if qtyL > 0:
-                qtyL, profitL = self.find_best_quantity(quantity-stride, stride / 2, tradeString, check_callback)
-            if qtyR > 0:
-                qtyR, profitR = self.find_best_quantity(quantity+stride, stride / 2, tradeString, check_callback)
-
-            if profitL > profitR:
-                return qtyL, profitL
-            else:
-                return qtyR, profitR
-        else:
+        if stride == 0:
             if tradeString == 'buy':
                 return quantity, quantity*(self.useAvg - check_callback(tradeString, quantity))
             else:
                 return quantity, quantity*(check_callback(tradeString, quantity) - self.useAvg)
+
+        qtyL = quantity-stride
+        qtyR = quantity+stride
+        profitL = 0
+        profitR = 0
+
+        if qtyL > 0:
+            qtyL, profitL = self.find_best_quantity(quantity-stride, stride, tradeString, check_callback)
+        if qtyR > 0:
+            qtyR, profitR = self.find_best_quantity(quantity+stride, stride, tradeString, check_callback)
+
+        if profitL > profitR:
+            return qtyL, profitL
+        else:
+            return qtyR, profitR
 
     def trading_opportunity(self, cash_callback, shares_callback,
                             check_callback, execute_callback,
@@ -91,31 +93,37 @@ class MyBot(traders.Trader):
         bestAction = 'buy'
         maxUncertainQuantity = 20
         windowSize = 20
-        jumpThreshold = 0.3
+        jumpThreshold = 0.5
 
         #   Don't trade on very limited information
         if len(self.information) < 10:
             return
 
-        # print "zero"
         # Consider the largest difference between two moving averages
         # to be a jump point if said difference is greater than some theshold
         if len(self.information) > 2*windowSize:
-            # print "a"
-            movingAvg = numpy.average(self.information[-windowSize:])
-            # print "b"
-            preMovingAvg = numpy.average(self.information[-2*windowSize:-windowSize])
-            # print "c"
+            # movingAvg = numpy.average(self.information[-windowSize:])
+            # preMovingAvg = numpy.average(self.information[-2*windowSize:-windowSize])
+
+            # harmonicDenom = numpy.sum(map(lambda x : float(1) / (windowSize - x), range(windowSize)))
+            harmonicDenom = 1
+
+            # use harmonically weighted averages of the two moving windows
+            movingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), range(windowSize), self.information[-windowSize:]))
+            movingAvg = movingAvg / harmonicDenom
+
+            preMovingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), range(windowSize), reversed(self.information[-2*windowSize:-windowSize])))
+            preMovingAvg = preMovingAvg / harmonicDenom
+
+            # print "harmonicDenom:", harmonicDenom, " movingAvg:", movingAvg, " preMovingAvg:", preMovingAvg
+
             self.diffMovingAvg.append(movingAvg-preMovingAvg)
 
             if self.diffMovingAvg[-1] == max(self.diffMovingAvg) and abs(self.diffMovingAvg[-1]) > jumpThreshold:
                 self.lastJumpIndex = len(self.diffMovingAvg) + windowSize
-                # print "Jumping at:", self.lastJumpIndex
-            # print "e"
+                print "Jumping at:", self.lastJumpIndex, " diffMovingAvg:", self.diffMovingAvg[-1]
 
-        # print "last jump index:", self.lastJumpIndex
         avg = numpy.average(self.information[self.lastJumpIndex:])
-        # print "one"
 
         self.useAvg = avg*100
 
@@ -141,14 +149,6 @@ class MyBot(traders.Trader):
             # print "Buying or selling? " + bestAction
             execute_callback(bestAction, bestQuantity)
 
-        # Place a randomly sized trade in the direction of
-        # our cumulative information.
-        # quantity = random.choice(xrange(1, 100))
-        # if (check_callback('buy', quantity) < 100*avg):
-        #     execute_callback('buy', quantity)
-        # elif check_callback('sell', quantity) > 100*avg:
-        #     execute_callback('sell', quantity)
-
 def main():
     bots = [MyBot()]
     # bots.extend(other_bots.get_bots(5, 2))
@@ -157,11 +157,11 @@ def main():
     # Plot a single run. Useful for debugging and visualizing your
     # bot's performance. Also prints the bot's final profit, but this
     # will be very noisy.
-    plot_simulation.run(bots)
+    # plot_simulation.run(bots)
     
     # Calculate statistics over many runs. Provides the mean and
     # standard deviation of your bot's profit.
-    # run_experiments.run(bots, num_processes=3, simulations=2000, lmsr_b=150)
+    run_experiments.run(bots, num_processes=3, simulations=2000, lmsr_b=150)
 
 # Extra parameters to plot_simulation.run:
 #   timesteps=100, lmsr_b=150
