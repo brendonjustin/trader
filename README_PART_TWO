@@ -1,0 +1,35 @@
+Installation: 
+
+First, put other_bots.py in the same directory as the Python files
+from part one.
+
+Next, at the top of my_bot.py add:
+import other_bots
+
+Usage:
+
+After the line "bots = [MyBot()]", add:
+bots.extend(other_bots.get_bots(5, 2))
+
+This will add five fundamentals traders and two technical traders to
+the simulation in addition to your bot. You should test with different
+proportions of these traders, simulating different market
+conditions. In general, the line:
+
+bots.extend(other_bots.get_bots(num_fundamentals, num_technical))
+
+...will create a simulation with 1 + num_fundamentals + num_technical
+traders including your bot. You can include multiple copies of your
+bot or other bots in the simulation by adding them to the list with
+bots.append (for a single bot) or bots.extend (for a list of bots).
+
+other_bots.py includes one type of fundamentals trader and two types
+of technical traders (get_bots() splits num_technical evenly between
+these two types). The technical traders use the price history only,
+and do not make money on average: they simulate noise traders which we
+often see in real markets.
+
+Now that there are more bots participating in the market, you may want
+to increase the lmsr_b parameter to decrease volatility. For example:
+plot_simulation.run(bots, lmsr_b=250)
+run_experiments.run(bots, simulations=1500, lmsr_b=250)

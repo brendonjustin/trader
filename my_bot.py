@@ -3,6 +3,7 @@ import random
 import traders
 import run_experiments
 import plot_simulation
+import other_bots
 
 import numpy
 
@@ -107,14 +108,6 @@ class MyBot(traders.Trader):
                 sellDiff = gains - useAvg*quantity
                 bestSellQuantity = quantity
 
-
-            if sellDiff > buyDiff:
-                bestQuantity = bestSellQuantity
-                bestAction = 'sell'
-            else:
-                bestQuantity = bestBuyQuantity
-                bestAction = 'buy'
-
         # Trade in the best way, if a beneficial trade was found
         if bestQuantity > 0:
             # print "Buying or selling? " + bestAction
@@ -130,6 +123,8 @@ class MyBot(traders.Trader):
 
 def main():
     bots = [MyBot()]
+    # bots.extend(other_bots.get_bots(5, 2))
+    # bots.extend(other_bots.get_bots(num_fundamentals, num_technical))
     
     # Plot a single run. Useful for debugging and visualizing your
     # bot's performance. Also prints the bot's final profit, but this
@@ -138,7 +133,7 @@ def main():
     
     # Calculate statistics over many runs. Provides the mean and
     # standard deviation of your bot's profit.
-    # run_experiments.run(bots, num_processes=3, simulations=13)
+    # run_experiments.run(bots, num_processes=3, simulations=2000, lmsr_b=150)
 
 # Extra parameters to plot_simulation.run:
 #   timesteps=100, lmsr_b=150
