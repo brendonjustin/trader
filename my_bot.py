@@ -93,7 +93,7 @@ class MyBot(traders.Trader):
         bestAction = 'buy'
         maxUncertainQuantity = 20
         windowSize = 20
-        jumpThreshold = 0.5
+        jumpThreshold = 0.15
 
         #   Don't trade on very limited information
         if len(self.information) < 10:
@@ -109,10 +109,12 @@ class MyBot(traders.Trader):
             harmonicDenom = 1
 
             # use harmonically weighted averages of the two moving windows
-            movingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), range(windowSize), self.information[-windowSize:]))
+            movingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), 
+                range(windowSize), self.information[-windowSize:]))
             movingAvg = movingAvg / harmonicDenom
 
-            preMovingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), range(windowSize), reversed(self.information[-2*windowSize:-windowSize])))
+            preMovingAvg = numpy.sum(map(lambda x, y : float(y) / (windowSize - x), 
+                range(windowSize), reversed(self.information[-2*windowSize:-windowSize])))
             preMovingAvg = preMovingAvg / harmonicDenom
 
             # print "harmonicDenom:", harmonicDenom, " movingAvg:", movingAvg, " preMovingAvg:", preMovingAvg
@@ -121,7 +123,7 @@ class MyBot(traders.Trader):
 
             if self.diffMovingAvg[-1] == max(self.diffMovingAvg) and abs(self.diffMovingAvg[-1]) > jumpThreshold:
                 self.lastJumpIndex = len(self.diffMovingAvg) + windowSize
-                print "Jumping at:", self.lastJumpIndex, " diffMovingAvg:", self.diffMovingAvg[-1]
+                # print "Jumping at:", self.lastJumpIndex, " diffMovingAvg:", self.diffMovingAvg[-1]
 
         avg = numpy.average(self.information[self.lastJumpIndex:])
 
