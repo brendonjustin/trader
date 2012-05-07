@@ -19,3 +19,9 @@ Standard deviation: 3273.71
 
 5. Graphically depict the evolution of prices in one simulation run which you consider typical for your trader.
 (sample_run.png)
+
+
+Changes from hw3 to hw4:
+1) Two moving average windows rather than one
+2) Harmonically weighted values in moving average windows
+3) Find the best action & quantity using binary search
